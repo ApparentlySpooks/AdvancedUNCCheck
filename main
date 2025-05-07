@@ -1,0 +1,84 @@
+--[[
+UNC Check by r1valry via discord
+Executor Capability Audit — Synapse Style
+--]]
+
+-- Pretty print function with Unicode
+local function printResult(icon, name, err)
+    local output = icon .. " " .. name
+    if err then
+        output = output .. " failed: " .. err
+    end
+    print(output)
+end
+
+-- List of advanced executor functions to test
+local checks = {
+    "debug.getupvalues",
+    "debug.setconstant",
+    "debug.setstack",
+    "debug.setupvalue",
+    "crypt.base64encode",
+    "crypt.base64decode",
+    "readfile", "writefile", "appendfile", "delfile", "listfiles", "makefolder",
+    "dofile",
+    "isrbxactive",
+    "mouse1click", "mouse1press", "mouse1release",
+    "mouse2click", "mouse2press", "mouse2release",
+    "mousemoverel", "mousemoverabs", "mousescroll",
+    "fireclickdetector",
+    "getcallbackvalue", "getconnections", "gethiddenproperty",
+    "gethui", "getinstances", "getnilinstances",
+    "isscriptable", "setrbxclipboard",
+    "getrawmetatable", "hookmetamethod", "getnamecallmethod",
+    "isreadonly", "setreadonly", "setnamecallmethod",
+    "identifyexecutor", "messagebox"
+}
+
+local passed = 0
+local total = #checks
+
+print("=== UNC Check by r1valry via discord ===")
+print("✅ - Pass | ❌ - Fail |\n")
+
+for _, check in ipairs(checks) do
+    local success, err = pcall(function()
+        local func = _G
+        local parts = string.split(check, ".")
+
+        for _, part in ipairs(parts) do
+            func = func[part]
+        end
+
+        -- Test function if callable
+        if typeof(func) == "function" then
+            -- Special test cases
+            if check == "crypt.base64encode" then
+                func("test")
+            elseif check == "crypt.base64decode" then
+                func("dGVzdA==")
+            elseif check == "fireclickdetector" then
+                func(Instance.new("ClickDetector"))
+            elseif check == "getconnections" then
+                func(game.DescendantAdded)
+            elseif check == "getcallbackvalue" then
+                func(function() end)
+            else
+                func()
+            end
+        else
+            error("not a function")
+        end
+    end)
+
+    if success then
+        printResult("✅", check)
+        passed += 1
+    else
+        printResult("❌", check, err:match("[^:]+:%d+:%s*(.*)") or err)
+    end
+end
+
+-- Rating
+local rating = math.floor((passed / total) * 100)
+print("\n=== UNC Rating: " .. rating .. "% (" .. passed .. "/" .. total .. " passed) ===")
